@@ -76,6 +76,8 @@ public class Utils {
     private static final String DONATION_PACKAGE = "com.grarak.kerneladiutordonate";
 
     public static boolean isDonated(Context context) {
+        return true;
+        /*
         if (BuildConfig.DEBUG) {
             return true;
         }
@@ -85,6 +87,7 @@ public class Utils {
         } catch (PackageManager.NameNotFoundException ignored) {
             return false;
         }
+        */
     }
 
     public static void startService(Context context, Intent intent) {

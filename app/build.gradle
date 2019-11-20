@@ -12,6 +12,14 @@ apply plugin: 'com.android.application'
 apply plugin: 'io.fabric'
 
 android {
+    signingConfigs {
+        release {
+            storeFile file('C:\\Users\\Jordan\\kernel_adiutor.jks')
+            storePassword '0D1kmwC01uE4PHKuvsmw'
+            keyPassword '0D1kmwC01uE4PHKuvsmw'
+            keyAlias = 'key0'
+        }
+    }
     compileSdkVersion 27
     buildToolsVersion "27.0.3"
     defaultConfig {
@@ -35,6 +43,7 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
     lintOptions {
