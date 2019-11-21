@@ -69,6 +69,8 @@ public class DescriptionView extends RecyclerViewItem {
             });
         }
 
+        setFullSpan(true);
+
         super.onCreateView(view);
     }
 
