@@ -20,6 +20,8 @@
 package com.grarak.kerneladiutor.fragments.kernel;
 
 import android.support.design.widget.Snackbar;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 
 import com.grarak.kerneladiutor.R;
 import com.grarak.kerneladiutor.fragments.ApplyOnBootFragment;
@@ -78,12 +80,34 @@ public class PathReaderFragment extends RecyclerViewFragment {
 
     private void reload() {
         getHandler().postDelayed(() -> {
+            // TODO: Only works half the time.
+            int[] positions = ((StaggeredGridLayoutManager)mLayoutManager).findFirstCompletelyVisibleItemPositions(null);
+            int lastScrollPos = Integer.MAX_VALUE;
+            for (int p : positions) {
+                if (p != RecyclerView.NO_POSITION && p < lastScrollPos) {
+                    lastScrollPos = p;
+                }
+            }
+            if (lastScrollPos == Integer.MAX_VALUE) {
+                lastScrollPos = 0;
+            }
+
             clearItems();
-            reload(new ReloadHandler());
+            reload(new ReloadHandler(lastScrollPos));
         }, 250);
     }
 
     private static class ReloadHandler extends RecyclerViewFragment.ReloadHandler<PathReaderFragment> {
+        private int lastScrollPos;
+
+        public ReloadHandler() {
+            lastScrollPos = 0;
+        }
+
+        public ReloadHandler(int lastScrollPos) {
+            this.lastScrollPos = lastScrollPos;
+        }
+
         @Override
         public void onPostExecute(PathReaderFragment fragment, List<RecyclerViewItem> items) {
             super.onPostExecute(fragment, items);
@@ -91,6 +115,7 @@ public class PathReaderFragment extends RecyclerViewFragment {
                 Snackbar.make(fragment.getRootView(),
                         fragment.mError, Snackbar.LENGTH_SHORT).show();
             }
+            fragment.mLayoutManager.scrollToPosition(lastScrollPos);
         }
     }
 

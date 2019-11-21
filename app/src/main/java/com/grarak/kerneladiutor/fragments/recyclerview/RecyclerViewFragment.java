@@ -41,6 +41,7 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
@@ -87,8 +88,8 @@ public abstract class RecyclerViewFragment extends BaseFragment {
     private View mRootView;
 
     private List<RecyclerViewItem> mItems = new ArrayList<>();
-    private RecyclerView mRecyclerView;
-    private RecyclerView.LayoutManager mLayoutManager;
+    protected RecyclerView mRecyclerView;
+    protected RecyclerView.LayoutManager mLayoutManager;
     private RecyclerViewAdapter mRecyclerViewAdapter;
     private Scroller mScroller;
 
@@ -121,6 +122,8 @@ public abstract class RecyclerViewFragment extends BaseFragment {
     private Fragment mDialogFragment;
     private View mDialogParent;
     boolean mDialogForceShow;
+
+    private int mLastScrollPosition;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -915,6 +918,8 @@ public abstract class RecyclerViewFragment extends BaseFragment {
         for (RecyclerViewItem item : mItems) {
             item.onResume();
         }
+
+        mLayoutManager.scrollToPosition(mLastScrollPosition);
     }
 
     @Override
@@ -927,6 +932,16 @@ public abstract class RecyclerViewFragment extends BaseFragment {
         for (RecyclerViewItem item : mItems) {
             item.onPause();
         }
+
+        // TODO: Check that this actually works.
+        int[] positions = ((StaggeredGridLayoutManager)mLayoutManager).findFirstCompletelyVisibleItemPositions(null);
+        int low = Integer.MAX_VALUE;
+        for (int p : positions) {
+            if (p != RecyclerView.NO_POSITION && p < low) {
+                low = p;
+            }
+        }
+        mLastScrollPosition = low != Integer.MAX_VALUE ? low : 0;
     }
 
     @Override
