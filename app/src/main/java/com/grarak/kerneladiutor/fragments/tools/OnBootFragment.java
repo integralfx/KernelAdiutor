@@ -19,6 +19,10 @@
  */
 package com.grarak.kerneladiutor.fragments.tools;
 
+import android.os.Parcelable;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
+
 import com.grarak.kerneladiutor.R;
 import com.grarak.kerneladiutor.database.Settings;
 import com.grarak.kerneladiutor.database.tools.customcontrols.Controls;
@@ -76,8 +80,19 @@ public class OnBootFragment extends RecyclerViewFragment {
 
     private void reload() {
         getHandler().postDelayed(() -> {
+            int[] positions = ((StaggeredGridLayoutManager)mLayoutManager).findFirstVisibleItemPositions(null);
+            int lastScrollPos = Integer.MAX_VALUE;
+            for (int p : positions) {
+                if (p != RecyclerView.NO_POSITION && p < lastScrollPos) {
+                    lastScrollPos = p;
+                }
+            }
+            if (lastScrollPos == Integer.MAX_VALUE) {
+                lastScrollPos = 0;
+            }
+
             clearItems();
-            reload(new ReloadHandler<>());
+            reload(new ReloadHandler<>(lastScrollPos));
         }, 250);
     }
 

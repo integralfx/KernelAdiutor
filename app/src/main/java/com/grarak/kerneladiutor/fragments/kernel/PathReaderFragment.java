@@ -19,6 +19,7 @@
  */
 package com.grarak.kerneladiutor.fragments.kernel;
 
+import android.os.Parcelable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
@@ -80,8 +81,7 @@ public class PathReaderFragment extends RecyclerViewFragment {
 
     private void reload() {
         getHandler().postDelayed(() -> {
-            // TODO: Only works half the time.
-            int[] positions = ((StaggeredGridLayoutManager)mLayoutManager).findFirstCompletelyVisibleItemPositions(null);
+            int[] positions = ((StaggeredGridLayoutManager)mLayoutManager).findFirstVisibleItemPositions(null);
             int lastScrollPos = Integer.MAX_VALUE;
             for (int p : positions) {
                 if (p != RecyclerView.NO_POSITION && p < lastScrollPos) {
@@ -98,14 +98,8 @@ public class PathReaderFragment extends RecyclerViewFragment {
     }
 
     private static class ReloadHandler extends RecyclerViewFragment.ReloadHandler<PathReaderFragment> {
-        private int lastScrollPos;
-
-        public ReloadHandler() {
-            lastScrollPos = 0;
-        }
-
-        public ReloadHandler(int lastScrollPos) {
-            this.lastScrollPos = lastScrollPos;
+        ReloadHandler(int lastScrollPos) {
+            super(lastScrollPos);
         }
 
         @Override

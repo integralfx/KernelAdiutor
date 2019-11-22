@@ -30,6 +30,7 @@ import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.AppBarLayout;
@@ -344,6 +345,16 @@ public abstract class RecyclerViewFragment extends BaseFragment {
     public static class ReloadHandler<T extends RecyclerViewFragment>
             extends LoadAsyncTask.LoadHandler<T, List<RecyclerViewItem>> {
 
+        protected int lastScrollPos;
+
+        public ReloadHandler() {
+
+        }
+
+        public ReloadHandler(int lastScrollPos) {
+            this.lastScrollPos = lastScrollPos;
+        }
+
         @Override
         public void onPreExecute(T fragment) {
             super.onPreExecute(fragment);
@@ -368,6 +379,7 @@ public abstract class RecyclerViewFragment extends BaseFragment {
             }
             fragment.hideProgress();
             fragment.mReloader = null;
+            fragment.mLayoutManager.scrollToPosition(lastScrollPos);
         }
     }
 
