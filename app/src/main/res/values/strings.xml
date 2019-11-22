@@ -122,6 +122,7 @@
     <string name="cluster_little" translatable="false">LITTLE</string>
     <string name="deep_sleep">Deep sleep</string>
     <string name="uptime">Uptime</string>
+    <string name="reset_time">Reset Time</string>
     <string name="error_frequencies">Failed to load frequencies</string>
     <string name="unused_frequencies">Unused Frequencies</string>
 

@@ -48,6 +48,7 @@ import com.grarak.kerneladiutor.utils.kernel.gpu.GPUFreq;
 import com.grarak.kerneladiutor.views.XYGraph;
 import com.grarak.kerneladiutor.views.recyclerview.CardView;
 import com.grarak.kerneladiutor.views.recyclerview.DescriptionView;
+import com.grarak.kerneladiutor.views.recyclerview.DualStatsView;
 import com.grarak.kerneladiutor.views.recyclerview.RecyclerViewItem;
 import com.grarak.kerneladiutor.views.recyclerview.StatsView;
 import com.grarak.kerneladiutor.views.recyclerview.overallstatistics.FrequencyButtonView;
@@ -55,6 +56,8 @@ import com.grarak.kerneladiutor.views.recyclerview.overallstatistics.FrequencyTa
 import com.grarak.kerneladiutor.views.recyclerview.overallstatistics.TemperatureView;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -67,6 +70,9 @@ public class OverallFragment extends RecyclerViewFragment {
 
     private StatsView mGPUFreqStatsView;
     private TemperatureView mTemperature;
+
+    private DualStatsView mTimeStatsView;
+    private LastResetTime mLastResetTime;
 
     private CardView mFreqBig;
     private CardView mFreqLITTLE;
@@ -83,6 +89,10 @@ public class OverallFragment extends RecyclerViewFragment {
 
         mCPUFreq = CPUFreq.getInstance();
         mGPUFreq = GPUFreq.getInstance();
+
+        if (mLastResetTime == null) {
+            mLastResetTime = LastResetTime.getInstance();
+        }
 
         addViewPagerFragment(new CPUUsageFragment());
         setViewPagerBackgroundColor(0);
@@ -131,6 +141,10 @@ public class OverallFragment extends RecyclerViewFragment {
             if (cpuStateMonitorLITTLE != null) {
                 updateView(cpuStateMonitorLITTLE, mFreqLITTLE);
             }
+
+            mLastResetTime.setLastResetTime(Calendar.getInstance().getTime());
+            updateLastResetTime();
+
             adjustScrollPosition();
         });
         frequencyButtonView.setRestoreListener(v -> {
@@ -227,11 +241,12 @@ public class OverallFragment extends RecyclerViewFragment {
         if (!isAdded() || card == null) return;
         card.clearItems();
 
-        // update the total state time
-        DescriptionView totalTime = new DescriptionView();
-        totalTime.setTitle(getString(R.string.uptime));
-        totalTime.setSummary(sToString(monitor.getTotalStateTime() / 100L));
-        card.addItem(totalTime);
+        mTimeStatsView = new DualStatsView();
+        mTimeStatsView.setTitleLeft(getString(R.string.uptime));
+        mTimeStatsView.setStatLeft(sToString(monitor.getTotalStateTime() / 100L));
+        mTimeStatsView.setTitleRight(getString(R.string.reset_time));
+        updateLastResetTime();
+        card.addItem(mTimeStatsView);
 
         /* Get the CpuStateMonitor from the app, and iterate over all states,
          * creating a row if the duration is > 0 or otherwise marking it in
@@ -300,6 +315,12 @@ public class OverallFragment extends RecyclerViewFragment {
                                   CardView frequencyCard) {
         // what percentage we've got
         float per = (float) state.getDuration() * 100 / monitor.getTotalStateTime();
+        /*
+        double durationSec = state.getDuration() / 100.0,
+               nowSec = Calendar.getInstance().getTimeInMillis() / 1000.0,
+               diffSec = nowSec - (mLastResetTime.getLastResetTime().getTime() / 1000.0),
+               per = durationSec / diffSec;
+        */
 
         String sFreq;
         if (state.getFreq() == 0) {
@@ -480,4 +501,36 @@ public class OverallFragment extends RecyclerViewFragment {
 
     }
 
+    // Overriding onSaveInstanceState() doesn't work and onRestoreInstanceState() isn't a method?
+    private static class LastResetTime {
+        private static LastResetTime instance;
+        private Date time;
+
+        private LastResetTime() {
+            time = Calendar.getInstance().getTime();
+        }
+
+        public static LastResetTime getInstance() {
+            if (instance == null) {
+                instance = new LastResetTime();
+            }
+            return instance;
+        }
+
+        Date getLastResetTime() {
+            return time;
+        }
+
+        void setLastResetTime(Date newTime) {
+            time = newTime;
+        }
+    }
+
+    private void updateLastResetTime() {
+        if (mTimeStatsView != null) {
+            long now = Calendar.getInstance().getTimeInMillis(),
+                lastResetTimeMs = mLastResetTime.getLastResetTime().getTime();
+            mTimeStatsView.setStatRight(sToString((now - lastResetTimeMs) / 1000));
+        }
+    }
 }
