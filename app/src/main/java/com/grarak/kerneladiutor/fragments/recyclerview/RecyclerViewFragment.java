@@ -945,7 +945,6 @@ public abstract class RecyclerViewFragment extends BaseFragment {
             item.onPause();
         }
 
-        // TODO: Check that this actually works.
         int[] positions = ((StaggeredGridLayoutManager)mLayoutManager).findFirstCompletelyVisibleItemPositions(null);
         int low = Integer.MAX_VALUE;
         for (int p : positions) {
