@@ -31,6 +31,7 @@ import com.grarak.kerneladiutor.utils.kernel.cpuhotplug.CoreCtl;
 import com.grarak.kerneladiutor.utils.kernel.cpuhotplug.MPDecision;
 import com.grarak.kerneladiutor.utils.kernel.cpuhotplug.QcomBcl;
 import com.grarak.kerneladiutor.utils.root.Control;
+import com.grarak.kerneladiutor.utils.root.RootFile;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -39,7 +40,9 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by willi on 19.04.16.
@@ -87,6 +90,7 @@ public class CPUFreq {
     public int mCoreCtlMinCpu = 2;
     private SparseArray<List<Integer>> sFreqs = new SparseArray<>();
     private String[] sGovernors;
+    private HashMap<String, HashMap<String, String>> mGovernorSettings = new HashMap<>();
 
     private CPUFreq(Context context) {
         if (context != null) {
@@ -296,7 +300,19 @@ public class CPUFreq {
     }
 
     public void setGovernor(String governor, int min, int max, Context context) {
+        /*
+         * Changing from interactive to performance and back to interactive will reset some of the
+         * interactive governor settings.
+         * Save the settings and re-apply them.
+         */
+        mGovernorSettings.put(getGovernor(true), getCurGovernorSettings());
+
         applyCpu(CPU_SCALING_GOVERNOR, governor, min, max, context);
+
+        HashMap<String, String> settings = mGovernorSettings.get(governor);
+        if (settings != null) {
+            applyGovernorSettings(settings, context);
+        }
     }
 
     public String getGovernor(boolean forceRead) {
@@ -395,6 +411,8 @@ public class CPUFreq {
     }
 
     public void setMinFreq(int freq, int min, int max, Context context) {
+        HashMap<String, String> settings = getCurGovernorSettings();
+
         MSMPerformance msmPerformance = MSMPerformance.getInstance();
         int maxFreq = getMaxFreq(min, false);
 
@@ -410,6 +428,8 @@ public class CPUFreq {
         if (Utils.existFile(HARD_CPU_MIN_FREQ)) {
             run(Control.write(String.valueOf(freq), HARD_CPU_MIN_FREQ), HARD_CPU_MIN_FREQ, context);
         }
+
+        applyGovernorSettings(settings, context);
     }
 
     public int getMinFreq(boolean forceRead) {
@@ -421,6 +441,12 @@ public class CPUFreq {
     }
 
     public void setMaxFreq(int freq, int min, int max, Context context) {
+        /*
+         * Sometimes changing min/max CPU frequency resets some of the interactive governor tunables.
+         * Save the current settings, change the frequency, then re-apply the saved settings.
+         */
+        HashMap<String, String> settings = getCurGovernorSettings();
+
         MSMPerformance msmPerformance = MSMPerformance.getInstance();
 
         if (Utils.existFile(CPU_MSM_CPUFREQ_LIMIT) && freq > Utils.strToInt(Utils.readFile(CPU_MSM_CPUFREQ_LIMIT))) {
@@ -449,6 +475,8 @@ public class CPUFreq {
         if (Utils.existFile(HARD_CPU_MAX_FREQ)) {
             run(Control.write(String.valueOf(freq), HARD_CPU_MAX_FREQ), HARD_CPU_MAX_FREQ, context);
         }
+
+        applyGovernorSettings(settings, context);
     }
 
     public int getMaxFreq(boolean forceRead) {
@@ -746,4 +774,36 @@ public class CPUFreq {
         Control.runSetting(command, ApplyOnBootFragment.CPU, id, context);
     }
 
+    /*
+     * Returns a HashMap of the tunable name and its value.
+     * Assumes that all the cores use the same governor settings as core 0.
+     */
+    private HashMap<String, String> getCurGovernorSettings() {
+        HashMap<String, String> cur = new HashMap<>();
+
+        String gov = getGovernor(true),
+               path = getGovernorTunablesPath(0, gov);
+
+        RootFile files = new RootFile(path);
+        for (RootFile rf : files.listFiles()) {
+            cur.put(rf.getName(), rf.readFile());
+        }
+
+        return cur;
+    }
+
+    // Applies the settings to the current governor.
+    private void applyGovernorSettings(HashMap<String, String> settings, Context context) {
+        String gov = getGovernor(true),
+            path = getGovernorTunablesPath(0, gov);
+        for (Map.Entry<String, String> e : settings.entrySet()) {
+            String settingPath = path + "/" + e.getKey();
+            Control.runSetting(
+                Control.write(e.getValue(), settingPath),
+                ApplyOnBootFragment.CPU,
+                settingPath,
+                context
+            );
+        }
+    }
 }

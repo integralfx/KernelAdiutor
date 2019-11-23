@@ -45,7 +45,9 @@ import com.grarak.kerneladiutor.views.recyclerview.XYGraphView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by willi on 01.05.16.
@@ -158,9 +160,15 @@ public class CPUFragment extends RecyclerViewFragment {
         mCPUMaxBig.setTitle(getString(R.string.cpu_max_freq));
         mCPUMaxBig.setSummary(getString(R.string.cpu_max_freq_summary));
         mCPUMaxBig.setItems(mCPUFreq.getAdjustedFreq(getActivity()));
-        mCPUMaxBig.setOnItemSelected((selectView, position, item)
-                -> mCPUFreq.setMaxFreq(mCPUFreq.getFreqs().get(position), bigCores.get(0),
-                bigCores.get(bigCores.size() - 1), getActivity()));
+
+        mCPUMaxBig.setOnItemSelected((selectView, position, item) ->
+            mCPUFreq.setMaxFreq(
+                mCPUFreq.getFreqs().get(position),
+                bigCores.get(0),
+                bigCores.get(bigCores.size() - 1),
+                getActivity()
+            )
+        );
         bigFrequenciesCard.addItem(mCPUMaxBig);
 
         mCPUMinBig = new SelectView();
